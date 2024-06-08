@@ -1,13 +1,25 @@
 package com.tsinghua.shops.utils;
 
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.tsinghua.shops.constants.CommonConst;
 import com.tsinghua.shops.dao.*;
-import com.tsinghua.shops.entity.User;
+import com.tsinghua.shops.entity.*;
+import com.tsinghua.shops.service.UserService;
 import com.tsinghua.shops.utils.cache.PoetryCache;
+import com.tsinghua.shops.vo.*;
+import org.apache.commons.io.IOUtils;
+import org.lionsoul.ip2region.xdb.Searcher;
+import org.springframework.beans.BeanUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
 
 @Component
 public class CommonQuery {
@@ -17,7 +29,7 @@ public class CommonQuery {
     @Autowired
     private HistoryInfoMapper historyInfoMapper;
 
-    @Autowired
+    @Autowired(required = false)
     private UserService userService;
 
     @Autowired
@@ -144,7 +156,7 @@ public class CommonQuery {
             return count;
         }
         LambdaQueryChainWrapper<Comment> wrapper = new LambdaQueryChainWrapper<>(commentMapper);
-        Integer c = wrapper.eq(Comment::getSource, source).eq(Comment::getType, type).count();
+        Integer c = Math.toIntExact(wrapper.eq(Comment::getSource, source).eq(Comment::getType, type).count());
         PoetryCache.put(CommonConst.COMMENT_COUNT_CACHE + source.toString() + "_" + type, c, CommonConst.EXPIRE);
         return c;
     }
@@ -214,7 +226,7 @@ public class CommonQuery {
                 if (!CollectionUtils.isEmpty(sorts)) {
                     sorts.forEach(sort -> {
                         LambdaQueryChainWrapper<Article> sortWrapper = new LambdaQueryChainWrapper<>(articleMapper);
-                        Integer countOfSort = sortWrapper.eq(Article::getSortId, sort.getId()).count();
+                        Integer countOfSort = Math.toIntExact(sortWrapper.eq(Article::getSortId, sort.getId()).count());
                         sort.setCountOfSort(countOfSort);
 
                         LambdaQueryChainWrapper<Label> wrapper = new LambdaQueryChainWrapper<>(labelMapper);
@@ -222,7 +234,7 @@ public class CommonQuery {
                         if (!CollectionUtils.isEmpty(labels)) {
                             labels.forEach(label -> {
                                 LambdaQueryChainWrapper<Article> labelWrapper = new LambdaQueryChainWrapper<>(articleMapper);
-                                Integer countOfLabel = labelWrapper.eq(Article::getLabelId, label.getId()).count();
+                                Integer countOfLabel = Math.toIntExact(labelWrapper.eq(Article::getLabelId, label.getId()).count());
                                 label.setCountOfLabel(countOfLabel);
                             });
                             sort.setLabels(labels);
